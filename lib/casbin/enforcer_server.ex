@@ -59,6 +59,26 @@ defmodule Casbin.EnforcerServer do
   end
 
   @doc """
+  Loads policy rules from the configured persist adapter and adds them
+  to the enforcer.
+
+  The persist adapter must be set using `set_persist_adapter/2` before
+  calling this function, otherwise an error will be returned.
+
+  ## Examples
+
+      # Set an EctoAdapter and load policies from database
+      adapter = EctoAdapter.new(MyApp.Repo)
+      EnforcerServer.set_persist_adapter("my_enforcer", adapter)
+      EnforcerServer.load_policies("my_enforcer")
+
+  See `Enforcer.load_policies!/1` for more details.
+  """
+  def load_policies(ename) do
+    GenServer.call(via_tuple(ename), {:load_policies})
+  end
+
+  @doc """
   Loads policy rules from external file given by the name `pfile` and
   adds them to the enforcer.
 
@@ -165,6 +185,26 @@ defmodule Casbin.EnforcerServer do
   end
 
   @doc """
+  Loads mapping policies from the configured persist adapter and adds them
+  to the enforcer.
+
+  The persist adapter must be set using `set_persist_adapter/2` before
+  calling this function, otherwise an error will be returned.
+
+  ## Examples
+
+      # Set an EctoAdapter and load mapping policies from database
+      adapter = EctoAdapter.new(MyApp.Repo)
+      EnforcerServer.set_persist_adapter("my_enforcer", adapter)
+      EnforcerServer.load_mapping_policies("my_enforcer")
+
+  See `Enforcer.load_mapping_policies!/1` for more details.
+  """
+  def load_mapping_policies(ename) do
+    GenServer.call(via_tuple(ename), {:load_mapping_policies})
+  end
+
+  @doc """
   Loads mapping policies from a csv file and adds them to the enforcer.
 
   See `Enforcer.load_mapping_policies!/2` for more details.
@@ -249,6 +289,12 @@ defmodule Casbin.EnforcerServer do
     end
   end
 
+  def handle_call({:load_policies}, _from, enforcer) do
+    new_enforcer = enforcer |> Enforcer.load_policies!()
+    :ets.insert(:enforcers_table, {self_name(), new_enforcer})
+    {:reply, :ok, new_enforcer}
+  end
+
   def handle_call({:load_policies, pfile}, _from, enforcer) do
     new_enforcer = enforcer |> Enforcer.load_policies!(pfile)
     :ets.insert(:enforcers_table, {self_name(), new_enforcer})
@@ -284,6 +330,12 @@ defmodule Casbin.EnforcerServer do
         :ets.insert(:enforcers_table, {self_name(), new_enforcer})
         {:reply, :ok, new_enforcer}
     end
+  end
+
+  def handle_call({:load_mapping_policies}, _from, enforcer) do
+    new_enforcer = enforcer |> Enforcer.load_mapping_policies!()
+    :ets.insert(:enforcers_table, {self_name(), new_enforcer})
+    {:reply, :ok, new_enforcer}
   end
 
   def handle_call({:load_mapping_policies, fname}, _from, enforcer) do

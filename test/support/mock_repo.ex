@@ -49,6 +49,16 @@ defmodule Casbin.Persist.MockRepo do
         {1, nil}
       end
 
+      def transaction(fun) when is_function(fun, 0) do
+        {:ok, fun.()}
+      end
+
+      def transaction(fun) when is_function(fun, 1) do
+        # For transaction with repo argument
+        result = fun.(__MODULE__)
+        {:ok, result}
+      end
+
       # Allow override in using modules
       defoverridable all: 1, all: 2
     end

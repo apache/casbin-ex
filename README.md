@@ -245,6 +245,116 @@ end
 As you can see, the cost of switching or upgrading to another access control
 mechanism is as simple as modifying the configuration.
 
+## Persisting Policies to Database with EctoAdapter
+
+Instead of loading policies from CSV files, you can persist them to a database using the `EctoAdapter`. This provides a more dynamic and scalable approach, especially for production environments where policies may change frequently.
+
+### Setup
+
+First, run the migration to create the `casbin_rule` table:
+
+```elixir
+# In your migration file
+defmodule MyApp.Repo.Migrations.CreateCasbinRule do
+  use Ecto.Migration
+
+  def change do
+    create table(:casbin_rule) do
+      add :ptype, :string, null: false
+      add :v0, :string
+      add :v1, :string
+      add :v2, :string
+      add :v3, :string
+      add :v4, :string
+      add :v5, :string
+      add :v6, :string
+    end
+  end
+end
+```
+
+### Loading Policies from Database
+
+```elixir
+alias Casbin.{EnforcerSupervisor, EnforcerServer}
+alias Casbin.Persist.EctoAdapter
+
+ename = "blog_ac"
+
+# Start the enforcer
+EnforcerSupervisor.start_enforcer(ename, "blog_ac.conf")
+
+# Configure the database adapter
+adapter = EctoAdapter.new(MyApp.Repo)
+EnforcerServer.set_persist_adapter(ename, adapter)
+
+# Load policies from database
+EnforcerServer.load_policies(ename)
+
+# For RBAC models, also load mapping policies
+EnforcerServer.load_mapping_policies(ename)
+
+# Now you can check permissions
+case EnforcerServer.allow?(ename, ["alice", "blog_post", "read"]) do
+  true -> # Access granted
+  false -> # Access denied
+end
+```
+
+### Auto-Persist on Policy Changes
+
+Once you set the `EctoAdapter`, any policy modifications are automatically persisted:
+
+```elixir
+# This policy is automatically saved to the database
+EnforcerServer.add_policy(ename, {:p, ["bob", "data", "write"]})
+
+# This mapping is also auto-saved
+EnforcerServer.add_mapping_policy(ename, {:g, "carol", "admin"})
+```
+
+### Application Startup Pattern
+
+For production applications, you typically want to load policies from the database on startup:
+
+```elixir
+defmodule MyApp.Application do
+  use Application
+
+  def start(_type, _args) do
+    children = [
+      MyApp.Repo,
+      # ... other children
+      {Casbin.EnforcerSupervisor, []}
+    ]
+
+    opts = [strategy: :one_for_one, name: MyApp.Supervisor]
+    {:ok, pid} = Supervisor.start_link(children, opts)
+
+    # Initialize enforcer with policies from database
+    setup_casbin()
+
+    {:ok, pid}
+  end
+
+  defp setup_casbin do
+    ename = "my_enforcer"
+    model_path = Application.app_dir(:my_app, "priv/casbin/model.conf")
+    
+    # Start enforcer
+    Casbin.EnforcerSupervisor.start_enforcer(ename, model_path)
+    
+    # Configure database adapter
+    adapter = Casbin.Persist.EctoAdapter.new(MyApp.Repo)
+    Casbin.EnforcerServer.set_persist_adapter(ename, adapter)
+    
+    # Load policies from database
+    Casbin.EnforcerServer.load_policies(ename)
+    Casbin.EnforcerServer.load_mapping_policies(ename)
+  end
+end
+```
+
 ## RESTful Example
 
 The config file:
