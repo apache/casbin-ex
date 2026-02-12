@@ -144,7 +144,7 @@ defmodule MyApp.MinimalTest do
   alias Casbin.EnforcerServer
   
   test "quick test with enforcer" do
-    {:ok, ename} = create_test_enforcer("minimal", "path/to/model.conf")
+    {:ok, ename} = create_test_enforcer("path/to/model.conf", "minimal")
     
     EnforcerServer.add_policy(ename, {:p, ["user", "resource", "action"]})
     assert EnforcerServer.allow?(ename, ["user", "resource", "action"])

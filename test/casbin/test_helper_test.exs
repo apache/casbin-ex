@@ -6,12 +6,6 @@ defmodule Casbin.TestHelperTest do
   @cfile "../../data/acl.conf" |> Path.expand(__DIR__)
   @pfile "../../data/acl.csv" |> Path.expand(__DIR__)
 
-  setup do
-    # Clean ETS state before each test
-    :ets.delete_all_objects(:enforcers_table)
-    :ok
-  end
-
   describe "unique_enforcer_name/1" do
     test "generates unique names" do
       name1 = TestHelper.unique_enforcer_name("test")
@@ -85,7 +79,7 @@ defmodule Casbin.TestHelperTest do
 
   describe "create_test_enforcer/2" do
     test "creates enforcer and returns unique name" do
-      assert {:ok, ename} = TestHelper.create_test_enforcer("create_test", @cfile)
+      assert {:ok, ename} = TestHelper.create_test_enforcer(@cfile, "create_test")
       
       assert String.contains?(ename, "create_test")
       
@@ -100,7 +94,7 @@ defmodule Casbin.TestHelperTest do
     end
 
     test "returns error for invalid config file" do
-      assert {:error, _reason} = TestHelper.create_test_enforcer("test", "/invalid/path.conf")
+      assert {:error, _reason} = TestHelper.create_test_enforcer("/invalid/path.conf", "test")
     end
   end
 

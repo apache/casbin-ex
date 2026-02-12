@@ -7,9 +7,6 @@ defmodule Casbin.AsyncCaseTest do
   @pfile "../../data/acl.csv" |> Path.expand(__DIR__)
 
   setup do
-    # Clean ETS state
-    :ets.delete_all_objects(:enforcers_table)
-    
     # Start isolated enforcer for this test
     enforcer_name = start_test_enforcer(@cfile)
     
