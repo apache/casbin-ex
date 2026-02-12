@@ -180,7 +180,7 @@ defmodule Casbin.AsyncTestHelper do
 
         # Return the enforcer name in the context
         # Convert context to map and add enforcer_name
-        [enforcer_name: enforcer_name | context]
+        ([enforcer_name: enforcer_name] ++ Enum.into(context, []))
         |> Enum.into(%{})
 
       {:error, reason} ->
