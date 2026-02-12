@@ -135,49 +135,4 @@ defmodule Casbin.TestHelper do
         :ok
     end
   end
-
-  @doc """
-  Creates a test enforcer with a unique name and automatic cleanup.
-
-  This is a convenience function that combines `unique_enforcer_name/1`,
-  enforcer startup, and automatic cleanup.
-
-  ## Parameters
-
-  - `config_file` - Path to the Casbin configuration file
-  - `prefix` - Optional string prefix for the enforcer name (default: "test")
-
-  ## Returns
-
-  `{:ok, enforcer_name}` on success, or `{:error, reason}` on failure.
-
-  ## Examples
-
-      test "admin permissions" do
-        {:ok, ename} = Casbin.TestHelper.create_test_enforcer(config_path)
-        EnforcerServer.add_policy(ename, {:p, ["admin", "data", "read"]})
-        assert EnforcerServer.allow?(ename, ["admin", "data", "read"])
-      end
-
-      test "with custom prefix" do
-        {:ok, ename} = Casbin.TestHelper.create_test_enforcer(config_path, "my_test")
-        # ...
-      end
-
-  Note: This function automatically registers cleanup in `on_exit/1`, so you
-  don't need to manually clean up the enforcer.
-  """
-  def create_test_enforcer(config_file, prefix \\ "test") do
-    ename = unique_enforcer_name(prefix)
-
-    case Casbin.EnforcerSupervisor.start_enforcer(ename, config_file) do
-      {:ok, _pid} ->
-        # Register cleanup
-        ExUnit.Callbacks.on_exit(fn -> cleanup_enforcer(ename) end)
-        {:ok, ename}
-
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
 end
