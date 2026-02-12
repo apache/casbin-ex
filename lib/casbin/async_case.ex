@@ -133,7 +133,7 @@ defmodule Casbin.AsyncCase do
   defmacro __using__(opts) do
     # Extract async option (default to true for safety)
     async = Keyword.get(opts, :async, true)
-    
+
     # Extract prefix option (default to module name)
     # Note: __CALLER__.module will be the test module using this macro
     prefix = Keyword.get(opts, :prefix, nil)
@@ -152,7 +152,7 @@ defmodule Casbin.AsyncCase do
       prefix and the provided config file.
 
       ## Parameters
-      
+
       - `config_file` - Path to the Casbin configuration file
 
       ## Returns
@@ -178,7 +178,7 @@ defmodule Casbin.AsyncCase do
       for the enforcer name.
 
       ## Parameters
-      
+
       - `prefix` - Custom prefix for the enforcer name
       - `config_file` - Path to the Casbin configuration file
 
