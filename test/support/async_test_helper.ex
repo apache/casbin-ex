@@ -4,7 +4,7 @@ defmodule Casbin.AsyncTestHelper do
 
   When running tests with `async: true`, tests must use unique enforcer names
   to avoid race conditions. This module provides utilities to:
-  
+
   1. Generate unique enforcer names per test
   2. Start isolated enforcer instances
   3. Cleanup enforcers after tests complete
@@ -177,7 +177,7 @@ defmodule Casbin.AsyncTestHelper do
       {:ok, _pid} ->
         # Register cleanup
         ExUnit.Callbacks.on_exit(fn -> stop_enforcer(enforcer_name) end)
-        
+
         # Return the enforcer name in the context
         # Convert context to map and add enforcer_name
         [enforcer_name: enforcer_name | context]

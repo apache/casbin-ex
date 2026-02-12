@@ -1,7 +1,7 @@
 defmodule Casbin.AsyncEnforcerServerTest do
   @moduledoc """
   This test module demonstrates how to safely use EnforcerServer in async tests.
-  
+
   This solves the problem described in the issue where tests using a shared
   enforcer name with async: true experience race conditions.
   """
@@ -98,9 +98,9 @@ defmodule Casbin.AsyncEnforcerServerTest do
     test "test with minimal setup boilerplate", %{enforcer_name: enforcer_name} do
       # Enforcer is ready to use, cleanup is automatic
       :ok = EnforcerServer.add_policy(enforcer_name, {:p, ["user1", "resource", "action"]})
-      
+
       assert EnforcerServer.allow?(enforcer_name, ["user1", "resource", "action"])
-      
+
       policies = EnforcerServer.list_policies(enforcer_name, %{})
       assert length(policies) == 1
     end
@@ -108,10 +108,11 @@ defmodule Casbin.AsyncEnforcerServerTest do
     test "another test with isolated state", %{enforcer_name: enforcer_name} do
       # Each test gets a fresh enforcer
       policies = EnforcerServer.list_policies(enforcer_name, %{})
-      assert length(policies) == 0  # Empty - not affected by previous test
-      
+      # Empty - not affected by previous test
+      assert length(policies) == 0
+
       :ok = EnforcerServer.add_policy(enforcer_name, {:p, ["user2", "resource2", "action2"]})
-      
+
       policies = EnforcerServer.list_policies(enforcer_name, %{})
       assert length(policies) == 1
       assert List.first(policies).attrs[:sub] == "user2"
@@ -138,6 +139,7 @@ defmodule Casbin.AsyncEnforcerServerTest do
       # All checks should work
       Enum.each(policies, fn policy ->
         req = [policy.attrs[:sub], policy.attrs[:obj], policy.attrs[:act]]
+
         assert EnforcerServer.allow?(enforcer_name, req),
                "Expected #{inspect(req)} to be allowed"
       end)
