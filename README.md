@@ -458,6 +458,35 @@ Key topics covered:
 
 ## Testing
 
+### Async Testing with Isolated Enforcers
+
+When writing tests with `async: true`, you need to ensure each test has its own isolated enforcer to prevent race conditions. Casbin-Ex provides `Casbin.AsyncCase` for this purpose:
+
+```elixir
+defmodule MyApp.PermissionsTest do
+  use Casbin.AsyncCase, async: true
+  
+  @config_file "path/to/model.conf"
+  
+  setup do
+    # Creates a unique enforcer for each test
+    {:ok, enforcer_name: start_test_enforcer(@config_file)}
+  end
+  
+  test "admin permissions", %{enforcer_name: ename} do
+    EnforcerServer.add_policy(ename, {:p, ["admin", "data", "read"]})
+    assert EnforcerServer.allow?(ename, ["admin", "data", "read"])
+  end
+end
+```
+
+**Why this matters:** Using a fixed enforcer name (e.g., `"my_enforcer"`) causes all tests to share the same global state, leading to race conditions in async tests. See our [Async Testing Guide](guides/async_testing.md) for:
+
+- Complete examples and best practices
+- Using `Casbin.TestHelper` for more control
+- Troubleshooting common async test issues
+- Migration guide from sync to async tests
+
 ### Using with Ecto.Adapters.SQL.Sandbox
 
 If you're using Casbin-Ex with Ecto and need to wrap operations in database transactions during testing, see our guide on [Testing with Ecto.Adapters.SQL.Sandbox and Transactions](guides/sandbox_testing.md).
