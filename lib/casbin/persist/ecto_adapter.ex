@@ -302,7 +302,11 @@ defmodule Casbin.Persist.EctoAdapter do
       repo = Casbin.Persist.EctoAdapter.get_repo(adapter)
       changeset = CasbinRule.create_changeset(policy)
 
-      case repo.insert(changeset) do
+      # on_conflict: :nothing prevents Ecto.ConstraintError when a duplicate rule is
+      # inserted concurrently (e.g., two nodes racing, or memory/DB state diverging after
+      # an EnforcerServer restart). Without this, the bare insert raises and crashes the
+      # EnforcerServer GenServer — a critical process that takes time to restart.
+      case repo.insert(changeset, on_conflict: :nothing) do
         {:ok, _casbin} -> {:ok, adapter}
         {:error, changeset} -> {:error, changeset.errors}
       end
@@ -375,7 +379,9 @@ defmodule Casbin.Persist.EctoAdapter do
     defp insert_policy(repo, adapter, policy) do
       changeset = CasbinRule.create_changeset(policy)
 
-      case repo.insert(changeset) do
+      # on_conflict: :nothing — same rationale as add_policy/2: save_policies/2
+      # truncates then re-inserts all rules; a race or restart can cause duplicates.
+      case repo.insert(changeset, on_conflict: :nothing) do
         {:ok, _casbin} -> adapter
         {:error, changeset} -> {:error, changeset.errors}
       end
