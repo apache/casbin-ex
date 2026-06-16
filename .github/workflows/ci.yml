@@ -14,20 +14,16 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        elixir: ['1.14.2']
-        otp: ['25.1.1']
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
-      - name: Set up Elixir
-        uses: erlef/setup-beam@v1
-        with:
-          elixir-version: ${{ matrix.elixir }}
-          otp-version: ${{ matrix.otp }}
+
+      - name: Set up Erlang and Elixir
+        run: |
+          wget -q https://packages.erlang-solutions.com/erlang-solutions_2.0_all.deb
+          sudo dpkg -i erlang-solutions_2.0_all.deb
+          sudo apt-get update -q
+          sudo apt-get install -y erlang elixir
       
       - name: Restore dependencies cache
         uses: actions/cache@v3
