@@ -1,92 +1,104 @@
 name: Release
 
+# Releases are cut by hand: nothing here runs on a merge, only on a pushed tag.
+#
+#   v1.14.0-rc1  ->  GitHub pre-release (the candidate put up for the Apache vote)
+#   v1.14.0      ->  GitHub release + publish to Hex
+#
+# Either way the release carries an Apache-style source tarball as its only
+# asset. The release manager downloads that tarball and signs / checksums it
+# locally before starting the vote; nothing is signed or uploaded here.
+
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
-    branches:
-      - master
-      - main
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  # Base name of the source release artifact, per Apache naming conventions.
+  ARTIFACT_BASENAME: apache-casbin-ex
 
 jobs:
   release:
-    name: Release
+    name: Release ${{ github.ref_name }}
+    if: github.repository == 'apache/casbin-ex'
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-          fetch-depth: 0
-          persist-credentials: false
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - name: Install semantic-release
+      - name: Resolve version from tag
+        id: version
         run: |
-          npm install -g \
-            semantic-release@21
-
-      - name: Run semantic-release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
-
-      - name: Check if release was created
-        id: check_release
-        run: |
-          # Get the current commit SHA
-          CURRENT_SHA=$(git rev-parse HEAD)
-          # Check if there's a tag pointing to this commit
-          if git describe --exact-match --tags $CURRENT_SHA 2>/dev/null; then
-            echo "release_created=true" >> $GITHUB_OUTPUT
-            echo "Release was created"
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          # v1.14.0-rc1 -> 1.14.0. The tarball the PPMC votes on is the exact tarball
+          # that ships, so the candidate counter is never part of its name.
+          BASE_VERSION="${VERSION%%-rc*}"
+          if [ "$VERSION" = "$BASE_VERSION" ]; then
+            PRERELEASE=false
           else
-            echo "release_created=false" >> $GITHUB_OUTPUT
-            echo "No release was created"
+            PRERELEASE=true
           fi
+          # Anything that is neither vX.Y.Z nor vX.Y.Z-rcN is a typo, and a typo
+          # must not reach Hex.
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$'; then
+            echo "::error::Tag $GITHUB_REF_NAME is not vX.Y.Z or vX.Y.Z-rcN."
+            exit 1
+          fi
+          {
+            echo "base_version=$BASE_VERSION"
+            echo "prerelease=$PRERELEASE"
+          } >> "$GITHUB_OUTPUT"
+          echo "Tag $GITHUB_REF_NAME -> version $BASE_VERSION (pre-release: $PRERELEASE)"
+
+      - name: Build source release tarball
+        id: package
+        run: |
+          set -euo pipefail
+          NAME="${ARTIFACT_BASENAME}-${{ steps.version.outputs.base_version }}-incubating-src"
+          ASSET="${RUNNER_TEMP}/${NAME}.tar.gz"
+          # git archive gives us exactly the tracked sources at this tag, unpacking
+          # into a single top-level directory named after the release.
+          git archive --format=tar.gz --prefix="$NAME/" -o "$ASSET" HEAD
+          echo "asset=$ASSET" >> "$GITHUB_OUTPUT"
+          ls -l "$ASSET"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+          ASSET: ${{ steps.package.outputs.asset }}
+        run: |
+          set -euo pipefail
+          FLAGS=(--title "$TAG" --generate-notes)
+          if [ "${{ steps.version.outputs.prerelease }}" = "true" ]; then
+            FLAGS+=(--prerelease)
+          fi
+          gh release create "$TAG" "$ASSET" "${FLAGS[@]}"
 
       - name: Set up Elixir
-        if: steps.check_release.outputs.release_created == 'true'
+        if: steps.version.outputs.prerelease == 'false'
         uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           elixir-version: '1.14.2'
           otp-version: '25.1.1'
 
-      - name: Get latest release version
-        if: steps.check_release.outputs.release_created == 'true'
-        id: get_version
+      - name: Write the version into mix.exs
+        if: steps.version.outputs.prerelease == 'false'
         run: |
-          # Fetch all tags
-          git fetch --tags
-          # Get the latest tag
-          VERSION=$(git describe --tags --abbrev=0)
-          # Remove 'v' prefix if present
-          VERSION=${VERSION#v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Latest version: $VERSION"
-
-      - name: Update version in mix.exs
-        if: steps.check_release.outputs.release_created == 'true'
-        run: |
-          VERSION="${{ steps.get_version.outputs.version }}"
-          # Update the version in the project configuration
-          sed -i "s/^\s*version: \"[^\"]*\"/      version: \"$VERSION\"/" mix.exs
-          echo "Updated version to:"
-          cat mix.exs | grep "version:"
+          sed -i "s/^\s*version: \"[^\"]*\"/      version: \"${{ steps.version.outputs.base_version }}\"/" mix.exs
+          grep "version:" mix.exs
 
       - name: Install dependencies
-        if: steps.check_release.outputs.release_created == 'true'
+        if: steps.version.outputs.prerelease == 'false'
         run: mix deps.get
 
-      - name: Publish to Hex.pm
-        if: steps.check_release.outputs.release_created == 'true'
+      - name: Publish to Hex
+        if: steps.version.outputs.prerelease == 'false'
         env:
           HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
         run: mix hex.publish --yes
