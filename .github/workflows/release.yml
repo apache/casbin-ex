@@ -54,7 +54,7 @@ jobs:
 
       - name: Set up Elixir
         if: steps.check_release.outputs.release_created == 'true'
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@54075bcc5e249e4758d363f27d099f55d843f124 # v1.24.1
         with:
           elixir-version: '1.14.2'
           otp-version: '25.1.1'
