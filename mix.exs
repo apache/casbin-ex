@@ -5,7 +5,7 @@ defmodule Casbin.MixProject do
     [
       app: :casbin,
       version: "1.6.1",
-      elixir: "~> 1.13",
+      elixir: "~> 1.15",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -31,7 +31,9 @@ defmodule Casbin.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:ecto_sql, "~> 3.10"},
+      {:ecto_sql, "~> 3.14"},
+      {:ecto, "~> 3.14.3"},
+      {:decimal, "~> 3.1 and >= 3.1.2"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:git_hooks, "~> 0.7.3", only: [:dev], runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
