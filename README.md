@@ -1,8 +1,17 @@
-# Casbin-Ex
+# Apache Casbin (Incubating) for Elixir
 
-[![GitHub Actions](https://github.com/casbin/casbin-ex/actions/workflows/ci.yml/badge.svg)](https://github.com/casbin/casbin-ex/actions/workflows/ci.yml)
-[![Hex.pm](https://img.shields.io/hexpm/v/casbin.svg)](https://hex.pm/packages/casbin)
-[![Release](https://img.shields.io/github/release/casbin/casbin-ex.svg)](https://github.com/casbin/casbin-ex/releases/latest)
+Apache Casbin is an effort undergoing incubation at The Apache Software
+Foundation (ASF), sponsored by the Apache Incubator. Incubation is required
+of all newly accepted projects until a further review indicates that the
+infrastructure, communications, and decision making process have stabilized
+in a manner consistent with other successful ASF projects. While incubation
+status is not necessarily a reflection of the completeness or stability of
+the code, it does indicate that the project has yet to be fully endorsed by
+the ASF.
+
+[![GitHub Actions](https://github.com/apache/casbin-ex/actions/workflows/ci.yml/badge.svg)](https://github.com/apache/casbin-ex/actions/workflows/ci.yml)
+[![Hex.pm](https://img.shields.io/hexpm/v/apache_casbin.svg)](https://hex.pm/packages/apache_casbin)
+[![Release](https://img.shields.io/github/release/apache/casbin-ex.svg)](https://github.com/apache/casbin-ex/releases/latest)
 [![Discord](https://img.shields.io/discord/1022748306096537660?logo=discord&label=discord&color=5865F2)](https://discord.gg/S5UjpzGZjN)
 
 **News**: still worry about how to write the correct Casbin policy? ``Casbin online editor`` is coming to help! Try it at: https://casbin.org/editor/
@@ -27,22 +36,32 @@ https://casbin.org/docs/overview
 
 ## Installation
 
-The package can be installed by adding `casbin` to your list of dependencies in `mix.exs`:
+The Apache package is named `apache_casbin` on Hex. The OTP application remains
+`:casbin`, and Elixir modules remain `Casbin.*`. Version 1.14.0 is being prepared;
+the new package will be available after release approval and publication.
+
+After publication, use the following dependency in `mix.exs`:
 
 ```elixir
 def deps do
   [
-    {:casbin, "~> 1.6"}
+    {:casbin, "~> 1.14", hex: :apache_casbin}
   ]
 end
 ```
+
+When migrating, replace the old `{:casbin, ...}` Hex dependency and update the
+lockfile. Use one Casbin package throughout the dependency graph; the old and
+new packages provide the same OTP application and modules and cannot be used
+as separate implementations in one application. Historical `casbin` releases
+remain unchanged.
 
 Or install from GitHub:
 
 ```elixir
 def deps do
   [
-    {:casbin, git: "https://github.com/casbin/casbin-ex"}
+    {:casbin, git: "https://github.com/apache/casbin-ex"}
   ]
 end
 ```
