@@ -32,7 +32,7 @@ CI success and a Git tag do not constitute release approval.
 2. Create the immutable `vX.Y.Z-rcN` tag. The workflow prepares an unsigned source
    archive and SHA-512 as an Actions artifact for development review. It has no
    registry credential and creates no GitHub release. Locally run
-   `python3 scripts/prepare_source.py vX.Y.Z-rcN NEW_OUTPUT_DIRECTORY`.
+   `bash scripts/prepare_source.sh vX.Y.Z-rcN NEW_OUTPUT_DIRECTORY`.
 3. Review the downloaded source and its exact commit/hash. In a clean extraction,
    run `mix deps.get`, `mix format --check-formatted`,
    `mix compile --warnings-as-errors` and `mix test` with `MIX_ENV=test` throughout.

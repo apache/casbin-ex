@@ -35,7 +35,7 @@ jobs:
           persist-credentials: false
 
       - name: Prepare unsigned source archive
-        run: python3 scripts/prepare_source.py "$GITHUB_REF_NAME" "$RUNNER_TEMP/candidate"
+        run: bash scripts/prepare_source.sh "$GITHUB_REF_NAME" "$RUNNER_TEMP/candidate"
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
