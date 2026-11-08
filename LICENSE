@@ -199,3 +199,9 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+
+Configuration template
+----------------------
+This distribution includes a configuration template from Credo 1.7.12 in
+.credo.exs under the MIT license reproduced in that file.

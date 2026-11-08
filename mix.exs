@@ -4,15 +4,15 @@ defmodule Casbin.MixProject do
   def project do
     [
       app: :casbin,
-      version: "1.6.1",
+      version: "1.14.0",
       elixir: "~> 1.13",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: description(),
       package: package(),
-      source_url: "https://github.com/casbin/casbin-ex",
-      homepage_url: "https://casbin.org"
+      source_url: "https://github.com/apache/casbin-ex",
+      homepage_url: "https://casbin.incubator.apache.org"
     ]
   end
 
@@ -39,18 +39,19 @@ defmodule Casbin.MixProject do
   end
 
   defp description() do
-    "Casbin-Ex is a powerful and efficient open-source access control library for Elixir projects."
+    "Apache Casbin (Incubating) for Elixir: an access control library supporting ACL, RBAC and ABAC. Apache Casbin is undergoing incubation at the Apache Software Foundation."
   end
 
   defp package() do
     [
-      name: "casbin",
-      files: ~w(lib .formatter.exs mix.exs README.md LICENSE),
+      name: "apache_casbin",
+      files:
+        ~w(lib guides rbac.png .formatter.exs .credo.exs mix.exs README.md LICENSE NOTICE DISCLAIMER),
       licenses: ["Apache-2.0"],
       links: %{
-        "GitHub" => "https://github.com/casbin/casbin-ex",
-        "Homepage" => "https://casbin.org",
-        "Docs" => "https://casbin.org/docs/overview"
+        "GitHub" => "https://github.com/apache/casbin-ex",
+        "Homepage" => "https://casbin.incubator.apache.org",
+        "Docs" => "https://casbin.incubator.apache.org/docs/overview/"
       }
     ]
   end
