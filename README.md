@@ -27,6 +27,11 @@ https://casbin.org/docs/overview
 
 ## Installation
 
+Version 1.14 requires Elixir 1.15 or later and Ecto SQL 3.14. Its dependency
+constraints require Ecto 3.14.3 or later in the 3.14 series and Decimal 3.1.2
+or later in the 3.x series. Applications upgrading from earlier versions must
+also check their other Ecto and Decimal dependency constraints.
+
 The package can be installed by adding `casbin` to your list of dependencies in `mix.exs`:
 
 ```elixir
