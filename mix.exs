@@ -64,8 +64,7 @@ defmodule Casbin.MixProject do
   defp package() do
     [
       name: "apache_casbin",
-      files:
-        ~w(lib guides rbac.png .formatter.exs .credo.exs mix.exs README.md LICENSE NOTICE DISCLAIMER),
+      files: ~w(lib guides .formatter.exs .credo.exs mix.exs README.md LICENSE NOTICE DISCLAIMER),
       licenses: ["Apache-2.0"],
       links: %{
         "GitHub" => "https://github.com/apache/casbin-ex",
