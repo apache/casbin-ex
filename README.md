@@ -199,17 +199,15 @@ figure out how to use Casbin-Ex without any of those.
 
 Our ACL access control system is working just fine for the initial purpose, but
 now our business is expanding rapidly, so we need a more flexible access
-control model to meet new business requirements. We went back to the
-drawing board and came up with this design for our new system:
-
-![rbac diagram](rbac.png)
+control model to meet new business requirements. We can organize permissions
+around a hierarchy of roles.
 
 We assign different roles to different users: `bob` has the role `reader`,
 `peter` has the role `author`, and `alice` has the role `admin`, and so on.
 We then define mappings from `role` to `permission` (instead of asking
 *who can do what* like in the ACL model, now we ask **which role can
 do what?**). We also define mappings from role to role to represent
-inheritance. In the above diagram, `admin` inherits from `author`,
+inheritance. In this example, `admin` inherits from `author`,
 which in turn inherits from `reader`.
 
 Note that the *has role* or *inherits from* relation is [transitive](https://en.wikipedia.org/wiki/Transitive_relation).
