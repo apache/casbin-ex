@@ -1254,7 +1254,8 @@ defmodule Casbin.Enforcer do
     case String.split(cidr_string, "/") do
       [ip_str, prefix_str] ->
         with {:ok, ip_tuple} <- parse_ip(ip_str),
-             {prefix_len, ""} <- Integer.parse(prefix_str) do
+             {prefix_len, ""} <- Integer.parse(prefix_str),
+             true <- prefix_len >= 0 and prefix_len <= max_prefix_len(ip_tuple) do
           {:ok, ip_tuple, prefix_len}
         else
           _ -> :error
@@ -1264,6 +1265,9 @@ defmodule Casbin.Enforcer do
         :error
     end
   end
+
+  defp max_prefix_len(ip_tuple) when tuple_size(ip_tuple) == 4, do: 32
+  defp max_prefix_len(_ip_tuple), do: 128
 
   # Check if an IP is within a CIDR range
   defp ip_in_cidr?(ip_tuple, network_tuple, prefix_len) do
