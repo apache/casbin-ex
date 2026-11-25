@@ -76,5 +76,16 @@ defmodule Casbin.Model.ConfigTest do
       assert effects == [e: "some(where(p.eft==allow))"]
       assert matchers == [m: "g(r.sub,p.sub)&&r.obj==p.obj&&r.act==p.act"]
     end
+
+    test "keeps comment markers, equal signs and spaces inside quoted strings" do
+      assert %Config{sections: sections} =
+               "../data/quoted.conf"
+               |> Path.expand(__DIR__)
+               |> Config.new()
+
+      assert sections[:matchers] == [
+               m: ~s(r.sub==p.sub&&r.obj==p.obj&&r.act==p.act||r.sub=="root #1"&&r.obj!="a=b")
+             ]
+    end
   end
 end

@@ -52,6 +52,7 @@ defmodule Casbin.Model.Config do
   @whitespace 32
   @new_line 10
   @eq 61
+  @quotes [?", ?']
   @default_section :undefined_section
 
   @doc """
@@ -272,16 +273,14 @@ defmodule Casbin.Model.Config do
   # See any other character.
 
   defp parse([ch | rest], [], eq_stack, tokens, pos) do
-    {succeeds, rem, count} = parse_token(rest)
-    next_token = [ch | succeeds]
-    next_pos = next_col(pos, count + 1)
+    {next_token, rem, count} = take_token(ch, rest)
+    next_pos = next_col(pos, count)
     parse(rem, [@default_section], eq_stack, [next_token | tokens], next_pos)
   end
 
   defp parse([ch | rest], secs, eq_stack, tokens, pos) do
-    {succeeds, rem, count} = parse_token(rest)
-    next_token = [ch | succeeds]
-    next_pos = next_col(pos, count + 1)
+    {next_token, rem, count} = take_token(ch, rest)
+    next_pos = next_col(pos, count)
     parse(rem, secs, eq_stack, [next_token | tokens], next_pos)
   end
 
@@ -304,6 +303,17 @@ defmodule Casbin.Model.Config do
 
   # Consume token.
 
+  # A token starting with a quote is consumed by `parse_token/2` itself, so
+  # the quoted string is kept whole.
+  defp take_token(ch, rest) when ch in @quotes do
+    parse_token([ch | rest])
+  end
+
+  defp take_token(ch, rest) do
+    {succeeds, rem, count} = parse_token(rest)
+    {[ch | succeeds], rem, count + 1}
+  end
+
   defp parse_token(list), do: parse_token(list, 0)
 
   defp parse_token([], _) do
@@ -313,6 +323,14 @@ defmodule Casbin.Model.Config do
   defp parse_token([ch, ?= | rest], count) when ch in ~c"!<>=" do
     {succeeds, rem, c} = parse_token(rest, 0)
     {[ch, ?= | succeeds], rem, count + 2 + c}
+  end
+
+  # Spaces, `=` and comment markers inside a quoted string are part of the
+  # value.
+  defp parse_token([q | rest], count) when q in @quotes do
+    {quoted, rem, c1} = parse_quoted(rest, q)
+    {succeeds, rem, c2} = parse_token(rem, 0)
+    {[q | quoted] ++ succeeds, rem, count + 1 + c1 + c2}
   end
 
   defp parse_token([ch | rest], count) do
@@ -325,6 +343,21 @@ defmodule Casbin.Model.Config do
         {[ch | succeeds], rem, count + 1 + c}
     end
   end
+
+  # Consume a quoted string up to and including its closing quote. An
+  # unclosed string runs to the end of the line.
+
+  defp parse_quoted(list, q), do: parse_quoted(list, q, [], 0)
+
+  defp parse_quoted([q | rest], q, acc, count) do
+    {Enum.reverse([q | acc]), rest, count + 1}
+  end
+
+  defp parse_quoted([ch | rest], q, acc, count) when ch != @new_line do
+    parse_quoted(rest, q, [ch | acc], count + 1)
+  end
+
+  defp parse_quoted(rest, _q, acc, count), do: {Enum.reverse(acc), rest, count}
 
   # Parse section.
 
