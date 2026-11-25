@@ -1091,25 +1091,41 @@ defmodule Casbin.Enforcer do
     key2 = String.replace(key2, "/*", "/.*")
 
     with {:ok, r1} <- Regex.compile(":[^/]+"),
-         keys <- Regex.scan(r1, key2) |> Enum.map(fn [k] -> k end),
-         key2 <- Regex.replace(r1, key2, "([^/]+)"),
-         {:ok, r2} <- Regex.compile("^" <> key2 <> "$"),
-         [_full | values] when values != [] <- Regex.run(r2, key1) do
-      find_path_var(keys, values, path_var)
+         keys <- Regex.scan(r1, key2) |> Enum.map(fn [k] -> String.slice(k, 1..-1//1) end),
+         {:ok, r2} <- compile_token_pattern(r1, key2),
+         %{} = captures <- Regex.named_captures(r2, key1) do
+      find_path_var(keys, captures, path_var)
     else
       _ -> ""
     end
   end
 
-  # Pairs the `:var` names captured from the pattern with their matched values
-  # and returns the value bound to `path_var`, or "" when it is not present.
-  defp find_path_var(keys, values, path_var) do
-    keys
-    |> Enum.zip(values)
-    |> Enum.find_value("", fn {k, v} ->
-      if String.slice(k, 1..-1//1) == path_var, do: v
-    end)
+  # Returns the value captured for the first `:var` named `path_var`, or ""
+  # when the pattern has no such variable.
+  defp find_path_var(keys, captures, path_var) do
+    case Enum.find_index(keys, &(&1 == path_var)) do
+      nil -> ""
+      i -> Map.get(captures, token_group_name(i), "")
+    end
   end
+
+  # Replaces every match of `token_re` in `key2` with a numbered named group,
+  # so a token's value is looked up by name and is not shifted by capture
+  # groups that `key2` carries of its own, e.g. "/(a|b)/{id}".
+  defp compile_token_pattern(token_re, key2) do
+    pattern =
+      token_re
+      |> Regex.split(key2)
+      |> Enum.with_index()
+      |> Enum.map_join(fn
+        {part, 0} -> part
+        {part, i} -> "(?<#{token_group_name(i - 1)}>[^/]+)" <> part
+      end)
+
+    Regex.compile("^" <> pattern <> "$")
+  end
+
+  defp token_group_name(i), do: "casbinToken#{i}"
 
   @doc """
   Returns `true` if `key1` matches the pattern of `key2`.
@@ -1158,9 +1174,13 @@ defmodule Casbin.Enforcer do
 
     with {:ok, r1} <- Regex.compile("\\{([^/]+)\\}"),
          tokens <- Regex.scan(r1, key2) |> Enum.map(fn [_, token] -> token end),
-         key2_pattern <- Regex.replace(r1, key2, "([^/]+)"),
-         {:ok, r2} <- Regex.compile("^" <> key2_pattern <> "$"),
-         [_full | values] <- Regex.run(r2, key1) do
+         {:ok, r2} <- compile_token_pattern(r1, key2),
+         %{} = captures <- Regex.named_captures(r2, key1) do
+      values =
+        tokens
+        |> Enum.with_index()
+        |> Enum.map(fn {_, i} -> Map.get(captures, token_group_name(i)) end)
+
       tokens_consistent?(tokens, values)
     else
       _ -> false
@@ -1168,7 +1188,7 @@ defmodule Casbin.Enforcer do
   end
 
   # Every repetition of the same `{token}` has to capture the same value.
-  defp tokens_consistent?(tokens, values) when length(tokens) == length(values) do
+  defp tokens_consistent?(tokens, values) do
     tokens
     |> Enum.zip(values)
     |> Enum.reduce_while(%{}, fn {token, value}, acc ->
@@ -1183,8 +1203,6 @@ defmodule Casbin.Enforcer do
       _ -> true
     end
   end
-
-  defp tokens_consistent?(_tokens, _values), do: false
 
   @doc """
   Returns `true` if IP address `ip1` matches the pattern of `ip2`.

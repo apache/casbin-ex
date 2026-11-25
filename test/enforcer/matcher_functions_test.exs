@@ -84,7 +84,10 @@ defmodule Casbin.Enforcer.MatcherFunctionsTest do
       {"/alice", "/:id", "id", "alice"},
       {"/alice/all", "/:id/all", "id", "alice"},
       {"/alice", "/:id/all", "id", ""},
-      {"/alice/all", "/:id", "id", ""}
+      {"/alice/all", "/:id", "id", ""},
+      {"/a/x/42", "/(a|b)/x/:id", "id", "42"},
+      {"/42/a", "/:id/(a|b)", "id", "42"},
+      {"/b/7/c/9", "/(a|b)/:x/(c|d)/:y", "y", "9"}
     ]
 
     Enum.each(@test_cases, fn {key1, key2, path_var, expected} ->
@@ -135,7 +138,11 @@ defmodule Casbin.Enforcer.MatcherFunctionsTest do
       {"/parent/123/child/123/book/456", "/parent/{id}/child/{id}/book/{id}", false},
       {"/parent/123/child/456/book/123", "/parent/{id}/child/{id}/book/{id}", false},
       {"/parent/123/child/456/book/", "/parent/{id}/child/{id}/book/{id}", false},
-      {"/parent/123/child/456", "/parent/{id}/child/{id}/book/{id}", false}
+      {"/parent/123/child/456", "/parent/{id}/child/{id}/book/{id}", false},
+      {"/a/123/child/123", "/(a|b)/{id}/child/{id}", true},
+      {"/a/123/child/456", "/(a|b)/{id}/child/{id}", false},
+      {"/c/123/child/123", "/(a|b)/{id}/child/{id}", false},
+      {"/123/x/123", "/{id}/(x|y)/{id}", true}
     ]
 
     Enum.each(@test_cases, fn {key1, key2, expected} ->
